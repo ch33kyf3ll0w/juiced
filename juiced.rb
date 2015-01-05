@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
-#Author: Andrew Bonstrom, 
+#Author: Andrew Bonstrom
+#v1.1
 #Credits to: Matthew Graber - Beastly PS Attack technique, TrustedSec group - Idea with Unicorn.py
 require 'io/console'
 require 'base64'
