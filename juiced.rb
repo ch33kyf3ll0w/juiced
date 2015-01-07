@@ -5,9 +5,9 @@
 require 'io/console'
 require 'base64'
 def usage
-	puts "Usage: ruby juiced.rb <msf/venom/Payload> <lhost> <lport> <payloadFlag> <payloadName>\n\n"
-	puts "Note: A file name is required for payload formats that output a file." 
-	puts "Payload Options: jar, war, macro, ps, vbs, asp, and js."
+	puts "Usage: ruby juiced.rb <msf/Venom/Payload> <lhost> <lport> <payloadFormatOption> <fileName>\n\n"
+	puts "Note: A fileName is required for payload formats that output a file." 
+	puts "Payload Format Option: jar, war, macro, ps, vbs, asp, and js."
 end
 #######################################################################################################################
 #Payload Functions Begin
