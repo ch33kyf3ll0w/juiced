@@ -1,4 +1,5 @@
-juiced
+juiced - The latest version is v1.5
+
 Ruby script that places output based around Matthew Graebers PowerShell Attacks (epic post) and TrustedSec's modifcations into a variety of payload formats.
 #Why write this when unicorn.py exists?
 #1. I wanted the challenge for my first "official" project with ruby.
@@ -14,6 +15,8 @@ jar = A executable jar file that will issue the powershell syntax*
 vbs = A executable vbs file that will issue the powershell syntax*
 js = A executable js file that will issue the powershell syntax*
 ps = The actual copy/pastable command you can paste into a command prompt
+war = A war file that will issue the powershell syntax*
+asp = A asp file that will issue the powershell syntax*
 *These payload types will require a filename to be given.
 
 As I find more fun ways of executing commands with different extensions I will add them in.
