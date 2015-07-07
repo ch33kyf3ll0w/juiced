@@ -1,4 +1,4 @@
-juiced - The latest version is v1.5
+juiced - The latest version is v1.7
 
 Ruby script that places output based around Matthew Graebers PowerShell Attacks (epic post) and TrustedSec's modifcations into a variety of payload formats.
 #Why write this when unicorn.py exists?
