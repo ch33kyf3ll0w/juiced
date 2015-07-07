@@ -52,7 +52,7 @@ def gen_Macro (content)
 #Adds initial double quotes
 	content = '"' + content
 #Split every 200 chars and then rejoin with newline and string continuation in order to meet the string var limitation
-	content = content.scan(/.{1,200}/).join("\" & _\r\n\"")
+	content = content.scan(/.{1,255}/).join("\" & _\r\n\"")
 	content += '"'
 #Splits the shellcode at the 4500 char point because thats roughly 24-25 lines for the first var
 	first, second = content.slice!(0...4500), content
