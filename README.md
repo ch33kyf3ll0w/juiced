@@ -22,5 +22,5 @@ Tool Usage:
 	ruby juiced.rb MsfvenomPayload Lhost Lport payloadFlag PayloadName
 
 	Note: Payload name required for jar file, and is not required for other payloads."
-	Payload Options: jar, ps, macro, vbs, and js.
+	Payload Options: jar, war, macro, ps, vbs, asp, bat, and js.
 ======
